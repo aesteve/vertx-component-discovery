@@ -1,43 +1,48 @@
-apply plugin: 'groovy'
-apply plugin: 'eclipse'
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'com.github.johnrengelman.shadow' version '1.2.1'
+}
 
 repositories {
-	mavenCentral()
+    mavenLocal()
+    mavenCentral()
+    maven { url 'http://oss.sonatype.org/content/repositories/snapshots/' }
 }
 
 dependencies {
-	compile localGroovy()
-	compile 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.1'
+    // vertx
+    compile 'io.vertx:vertx-core:3.0.0-SNAPSHOT'
+    
+    // tests
+    testCompile group: 'io.vertx', name: 'vertx-core', version: '3.0.0-SNAPSHOT', classifier: 'tests'
+    testCompile 'junit:junit:4.12'
 }
 
-task crawl(type:JavaExec) {
-	description "Crawl mvnrepository.com to look vertx modules"
-	
-	classpath = sourceSets.main.runtimeClasspath
-	
-	main = "io.vertx.componentdiscovery.crawling.MavenCentralCrawler"
+if (!JavaVersion.current().java8Compatible) {
+    throw new IllegalStateException("This needs Java 8. You are using ${JavaVersion.current()}.")
 }
 
-task download(type:JavaExec) {
-	description "Download missing or updated artifacts one by one"
-	
-	classpath = sourceSets.main.runtimeClasspath
-	
-	main = "io.vertx.componentdiscovery.crawling.ArtifactsDownloader"
+shadowJar  {
+    classifier = 'vertx'
+    manifest {
+        attributes 'Main-Class': 'io.vertx.core.Starter'
+        attributes 'Main-Verticle': 'java:io.vertx.componentdiscovery.DiscoveryService'
+    }
+    mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+    }
+    dependencies {
+        exclude(dependency('io.vertx:codegen'))
+        exclude(dependency('junit:junit'))
+        exclude(dependency('org.mvel:mvel2'))
+    }
 }
 
-task extractInfos(type:JavaExec) {
-	description "Extract complementary infos from the local (downloaded) mods/jar"
-	
-	classpath = sourceSets.main.runtimeClasspath
-	
-	main = "io.vertx.componentdiscovery.crawling.ExtractInfosFromMod"
+task start(dependsOn: shadowJar) << {
+    javaexec { main="-jar"; args shadowJar.archivePath }
 }
 
-task report(type:JavaExec) {
-	description "Generates an html report from export file"
-	
-	classpath = sourceSets.main.runtimeClasspath
-	
-	main = "io.vertx.componentdiscovery.reports.HtmlReporter"
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.3'
 }
