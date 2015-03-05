@@ -117,6 +117,7 @@ public class TaskReport<T> implements ApiObject {
 	@Override
 	public JsonObject toJsonObject() {
 		JsonObject json = new JsonObject();
+		json.put("name", name);
 		json.put("failed", failed);
 		json.put("failedCause", failedCause);
 		json.put("failedStatus", failedStatus);
