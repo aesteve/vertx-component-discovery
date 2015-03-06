@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -17,14 +18,14 @@ public class Artifact implements ApiObject {
     private String groupId;
     private String artifactId;
     private SortedSet<Version> versions;
-    private List<String> tags;
+    private Set<String> tags;
     private String md5;
     private List<String> availablePackages;
     private Map<String, Object> complementaryInfos;
 
     public Artifact() {
         versions = new TreeSet<Version>();
-        tags = new ArrayList<String>();
+        tags = new TreeSet<String>();
         availablePackages = new ArrayList<String>();
         complementaryInfos = new HashMap<String, Object>();
     }
@@ -43,7 +44,7 @@ public class Artifact implements ApiObject {
         Artifact art = new Artifact();
         art.groupId = json.getString("g");
         art.artifactId = json.getString("a");
-        art.tags = json.getJsonArray("tags").getList();
+        art.tags = new TreeSet(json.getJsonArray("tags").getList());
         art.availablePackages = json.getJsonArray("ec").getList();
 
         art.versions = new TreeSet<Version>();
@@ -64,7 +65,7 @@ public class Artifact implements ApiObject {
         art.artifactId = (String) json.get("a");
         art.versions = new TreeSet<Version>();
         art.versions.add(new Version((String) json.get("v"), (Long) json.get("timestamp")));
-        art.tags = (List<String>) json.get("tags");
+        art.tags = (Set<String>) json.get("tags");
         art.availablePackages = (List<String>) json.get("ec");
         return art;
     }
@@ -76,7 +77,9 @@ public class Artifact implements ApiObject {
         art.artifactId = (String) map.get("artifactId");
         List<Map<String, Object>> versions = (List<Map<String, Object>>) map.get("versions");
         versions.forEach(versionMap -> art.versions.add(Version.fromMap(versionMap)));
-        art.tags = (List<String>) map.get("tags");
+        if (map.get("tags") != null) {
+            art.tags = new TreeSet<String>((List<String>) map.get("tags"));
+        }
         art.md5 = (String) map.get("md5");
         art.availablePackages = (List<String>) map.get("availablePackages");
         art.complementaryInfos = (Map<String, Object>) map.get("complementaryInfos");
@@ -91,7 +94,9 @@ public class Artifact implements ApiObject {
         JsonArray versions = new JsonArray();
         this.versions.forEach(version -> versions.add(version.toJsonObject()));
         json.put("versions", versions);
-        json.put("tags", new JsonArray(this.tags));
+        if (this.tags != null) {
+            json.put("tags", new JsonArray(new ArrayList<String>(this.tags)));
+        }
         json.put("md5", md5);
         json.put("availablePackages", this.availablePackages);
         json.put("complementaryInfos", complementaryInfos);
@@ -107,7 +112,7 @@ public class Artifact implements ApiObject {
         }
         if (another.tags != null) {
             if (tags == null) {
-                tags = new ArrayList<String>();
+                tags = new TreeSet<String>();
             }
             tags.addAll(another.tags);
         }
@@ -158,14 +163,14 @@ public class Artifact implements ApiObject {
     /**
      * @return the tags
      */
-    public List<String> getTags() {
+    public Set<String> getTags() {
         return tags;
     }
 
     /**
      * @param tags the tags to set
      */
-    public void setTags(List<String> tags) {
+    public void setTags(Set<String> tags) {
         this.tags = tags;
     }
 
