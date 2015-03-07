@@ -3,11 +3,11 @@ package io.vertx.componentdiscovery.impl;
 import io.vertx.componentdiscovery.model.TaskReport;
 import io.vertx.core.AsyncResult;
 
-public class DiscoveryAsyncResult implements AsyncResult<TaskReport> {
+public class TaskAsyncResult implements AsyncResult<TaskReport> {
 
     private TaskReport report;
 
-    public DiscoveryAsyncResult(TaskReport report) {
+    public TaskAsyncResult(TaskReport report) {
         this.report = report;
     }
 

@@ -49,13 +49,13 @@ public class DiscoveryServiceImpl implements DiscoveryService {
         fullReport.start();
         if (crawlers.isEmpty()) {
             fullReport.end();
-            reports.handle(new DiscoveryAsyncResult(fullReport));
+            reports.handle(new TaskAsyncResult(fullReport));
         }
         crawlers.forEach(crawler -> {
             crawler.scan(singleReport -> {
                 fullReport.addTask(singleReport);
                 if (fullReport.nbSubTasks() == crawlers.size()) {
-                    reports.handle(new DiscoveryAsyncResult(fullReport));
+                    reports.handle(new TaskAsyncResult(fullReport));
                 }
             });
         });
