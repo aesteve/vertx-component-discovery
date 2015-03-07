@@ -13,51 +13,48 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DiscoveryServiceImpl implements DiscoveryService {
-    private final Vertx vertx;
-    private final JsonObject config;
-    private List<Crawler> crawlers;
+	private final Vertx vertx;
 
-    public DiscoveryServiceImpl(Vertx vertx, JsonObject config) {
-        this.vertx = vertx;
-        this.config = config;
-        this.crawlers = new ArrayList<Crawler>();
-    }
+	private List<Crawler> crawlers;
+	private JsonArray configuratedCrawlers;
 
-    @Override
-    public void start(Handler<AsyncResult<Void>> handler) {
-        // TODO : parseConfig :
-        // - instanciate crawlers
-        // - read old artifacts and store them
-        JsonArray configuratedCrawlers = config.getJsonArray("crawlers");
-        configuratedCrawlers.forEach(action -> {
-            JsonObject mapConfig = (JsonObject) action;
-            crawlers.add(Crawler.fromConfig(mapConfig, vertx));
-        });
-        handler.handle(new VoidResult());
-    }
+	public DiscoveryServiceImpl(Vertx vertx, JsonArray configuratedCrawlers) {
+		this.vertx = vertx;
+		this.configuratedCrawlers = configuratedCrawlers;
+		this.crawlers = new ArrayList<Crawler>();
+	}
 
-    @Override
-    public void stop(Handler<AsyncResult<Void>> handler) {
-        crawlers = new ArrayList<Crawler>();
-        handler.handle(new VoidResult());
-    }
+	@Override
+	public void start(Handler<AsyncResult<Void>> handler) {
+		configuratedCrawlers.forEach(action -> {
+			JsonObject mapConfig = (JsonObject) action;
+			crawlers.add(Crawler.fromConfig(mapConfig, vertx));
+		});
+		handler.handle(new VoidResult());
+	}
 
-    @Override
-    public void crawl(Handler<AsyncResult<TaskReport>> reports) {
-        System.out.println("Start crawling");
-        TaskReport fullReport = new TaskReport("Components discovery");
-        fullReport.start();
-        if (crawlers.isEmpty()) {
-            fullReport.end();
-            reports.handle(new TaskAsyncResult(fullReport));
-        }
-        crawlers.forEach(crawler -> {
-            crawler.scan(singleReport -> {
-                fullReport.addTask(singleReport);
-                if (fullReport.nbSubTasks() == crawlers.size()) {
-                    reports.handle(new TaskAsyncResult(fullReport));
-                }
-            });
-        });
-    }
+	@Override
+	public void stop(Handler<AsyncResult<Void>> handler) {
+		crawlers = new ArrayList<Crawler>();
+		handler.handle(new VoidResult());
+	}
+
+	@Override
+	public void crawl(Handler<AsyncResult<TaskReport>> reports) {
+		System.out.println("Start crawling");
+		TaskReport fullReport = new TaskReport("Components discovery");
+		fullReport.start();
+		if (crawlers.isEmpty()) {
+			fullReport.end();
+			reports.handle(new TaskAsyncResult(fullReport));
+		}
+		crawlers.forEach(crawler -> {
+			crawler.scan(singleReport -> {
+				fullReport.addTask(singleReport);
+				if (fullReport.nbSubTasks() == crawlers.size()) {
+					reports.handle(new TaskAsyncResult(fullReport));
+				}
+			});
+		});
+	}
 }
