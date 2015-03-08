@@ -15,6 +15,21 @@ import java.util.TreeSet;
 // distributions ? are they used ?
 // + getters/setters (or is it really evil ?)
 public class Artifact implements ApiObject {
+
+	public enum ArtifactType {
+		MAVEN, NPM, GEM, PIP;
+
+		public static ArtifactType fromString(String s) {
+			for (ArtifactType value : ArtifactType.values()) {
+				if (value.toString().equalsIgnoreCase(s)) {
+					return value;
+				}
+			}
+			return null;
+		}
+	}
+
+	private ArtifactType type;
 	private String groupId;
 	private String artifactId;
 	private SortedSet<Version> versions;
@@ -23,7 +38,8 @@ public class Artifact implements ApiObject {
 	private List<String> availablePackages;
 	private Map<String, Object> complementaryInfos;
 
-	public Artifact() {
+	public Artifact(ArtifactType type) {
+		this.type = type;
 		versions = new TreeSet<Version>();
 		tags = new TreeSet<String>();
 		availablePackages = new ArrayList<String>();
@@ -41,7 +57,8 @@ public class Artifact implements ApiObject {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static Artifact fromExport(JsonObject json) {
-		Artifact art = new Artifact();
+		String type = json.getString("type");
+		Artifact art = new Artifact(ArtifactType.fromString(type));
 		art.groupId = json.getString("g");
 		art.artifactId = json.getString("a");
 		art.tags = new TreeSet(json.getJsonArray("tags").getList());
@@ -60,7 +77,7 @@ public class Artifact implements ApiObject {
 
 	@SuppressWarnings({ "unchecked" })
 	public static Artifact fromCentral(Map<String, Object> json) {
-		Artifact art = new Artifact();
+		Artifact art = new Artifact(ArtifactType.MAVEN);
 		art.groupId = (String) json.get("g");
 		art.artifactId = (String) json.get("a");
 		art.versions = new TreeSet<Version>();
@@ -74,7 +91,8 @@ public class Artifact implements ApiObject {
 
 	@SuppressWarnings("unchecked")
 	public static Artifact fromMap(Map<String, Object> map) {
-		Artifact art = new Artifact();
+		String type = (String) map.get("type");
+		Artifact art = new Artifact(ArtifactType.fromString(type));
 		art.groupId = (String) map.get("groupId");
 		art.artifactId = (String) map.get("artifactId");
 		List<Map<String, Object>> versions = (List<Map<String, Object>>) map.get("versions");
@@ -91,6 +109,7 @@ public class Artifact implements ApiObject {
 	@Override
 	public JsonObject toJsonObject() {
 		JsonObject json = new JsonObject();
+		json.put("type", type.toString());
 		json.put("groupId", groupId);
 		json.put("artifactId", artifactId);
 		JsonArray versions = new JsonArray();
